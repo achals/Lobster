@@ -76,10 +76,9 @@ class HttpEngine {
         contents
       else {
         //if (n%500 == 0) println(n + " " + contents.length) else ()
-        val line = inBufReader.readLine()
-        println(line)
-        contents++=line
-        readInner(inBufReader, n-line.length(), contents)
+        val readInt = inBufReader.read()
+        contents+=readInt.toChar
+        readInner(inBufReader, n-1, contents)
       }
     }
     
