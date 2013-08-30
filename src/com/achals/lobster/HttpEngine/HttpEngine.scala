@@ -2,6 +2,7 @@ package com.achals.lobster.HttpEngine
 
 import java.net.{URL, Socket}
 import java.io.{BufferedReader, InputStreamReader, InputStream, OutputStream}
+import java.nio.{ByteBuffer}
 import java.lang.Integer
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -10,7 +11,8 @@ class HttpEngine {
 
   def HEAD (url: String):Option[Contents] = {
     val urlObj = new URL(url)
-    val sock = new Socket(urlObj.getHost(), urlObj.getPort())
+    val port = if (urlObj.getPort() == -1) urlObj.getDefaultPort() else urlObj.getPort()
+    val sock = new Socket(urlObj.getHost(), port)
     
     val outStream = sock.getOutputStream()
     val inStream  = sock.getInputStream()
@@ -30,11 +32,12 @@ class HttpEngine {
   
     makeRequest(outStream, "GET", urlObj)
     val headers = parseHeaders(url, inBufReader)
+//    println((headers.get.Body.toArray))
+    
     val output = headers match {
       case Some(content) => parseBody(inBufReader, content)
       case None 		 => None
     }
-    println(headers.get.Headers)
     output
   }
   
@@ -44,6 +47,7 @@ class HttpEngine {
 
     outStream.write((command+" "+file+" HTTP/1.1\r\n").getBytes());
     outStream.write(("User-Agent: Lobstercrawler\r\n").getBytes());
+    outStream.write(("Accept-Encoding: identity\r\n").getBytes());
     outStream.write(("Connection: close\r\n").getBytes());
     outStream.write(("Host: "+host+"\r\n\r\n").getBytes());
     outStream.flush();
@@ -53,11 +57,10 @@ class HttpEngine {
     var line = ""
     var content = ""
     val StatusLine = inStream.readLine()
-    println(StatusLine)
     if (StatusLine.split(" ")(1)=="200") {
-		  val initList:mutable.ListBuffer[Byte] = mutable.ListBuffer()
-		  initList.insertAll(0, StatusLine.getBytes())
-		  Some(parseLine(inStream, Contents(url, Map[String, String](), initList)))
+		  val initList:mutable.StringBuilder = new mutable.StringBuilder(StatusLine)
+		  initList.map((x:Char) => println (x + " " + x.toInt) )
+		  Some(parseLines(inStream, Contents(url, Map[String, String](), initList)))
 		}
     else
       None
@@ -65,26 +68,30 @@ class HttpEngine {
   }
   
   private def readNBytes(inBufReader: BufferedReader, n:Int) = {
-    val contents:mutable.ListBuffer[Byte] = mutable.ListBuffer()
-    
+    val contents:mutable.StringBuilder = new mutable.StringBuilder()
+        
     @tailrec
-    def readInner(inBufReader: BufferedReader, n: Int, contents: mutable.ListBuffer[Byte]):mutable.ListBuffer[Byte] = {
+    def readInner(inBufReader: BufferedReader, n: Int, buffer: mutable.StringBuilder):mutable.StringBuilder = {
       if (n < 1)
         contents
       else {
-        println(n + " " + contents.length)
-        readInner(inBufReader, n-1, contents :+ inBufReader.read().toByte)
+        //if (n%500 == 0) println(n + " " + contents.length) else ()
+        val line = inBufReader.readLine()
+        println(line)
+        contents++=line
+        readInner(inBufReader, n-line.length(), contents)
       }
     }
     
-    readInner(inBufReader, n, contents)
+    readInner(inBufReader, n, contents).toString
   }
   
   private def parseBody(inBufReader: BufferedReader, tempContents: Contents): Option[Contents] = {
+	  val contents = Contents(tempContents.URL, tempContents.Headers, tempContents.Body ++= "\r\n")
 		  if (tempContents.Headers.get("Transfer-Encoding") == Some("Chunked"))
-		    Some(getChunkedResponse(inBufReader, tempContents))
+		    Some(getChunkedResponse(inBufReader, contents))
 		  else if (tempContents.Headers.contains("Content-Length"))
-			Some(getWholeResponse(inBufReader, tempContents))
+			Some(getWholeResponse(inBufReader, contents))
 	      else
 	        None
   }
@@ -94,7 +101,7 @@ class HttpEngine {
     println(length)
     Contents(tempContents.URL,
              tempContents.Headers,
-             readNBytes(inBufReader, length))
+             tempContents.Body ++= readNBytes(inBufReader, length).toString())
   }
   
   def getChunkedResponse(inBufReader:BufferedReader, tempContents:Contents): Contents = {
@@ -109,18 +116,38 @@ class HttpEngine {
       
       getChunkedResponse(inBufReader, Contents(tempContents.URL,
     		  								   tempContents.Headers,
-    		  								   tempContents.Body ++ bodyLine))
+    		  								   tempContents.Body ++= bodyLine.toString()))
     }
   }
   
   @tailrec
-  private def parseLine(inStream: BufferedReader, tempContent:Contents):Contents ={
+  private def parseLines(inStream: BufferedReader, tempContent:Contents):Contents ={
     val line = inStream.readLine()
+    println(line)
     if (line==null || line=="")
       tempContent
     else     
-      parseLine(inStream, Contents(tempContent.URL, 
+      parseLines(inStream, Contents(tempContent.URL, 
     		  					   tempContent.Headers+(line.split(":", 2)(0) -> line.split(":", 2)(1)),
-    		  					   tempContent.Body ++ line.getBytes()))
+    		  					   tempContent.Body ++= "\r\n" ++= line))
+  }
+  
+  def simplyRead(url: String) ={
+    val urlObj = new URL(url)
+    val port = if (urlObj.getPort() == -1) urlObj.getDefaultPort() else urlObj.getPort()
+    val sock = new Socket(urlObj.getHost(), port)
+    
+    val outStream = sock.getOutputStream()
+    val inStream  = sock.getInputStream()
+    val inBufReader = new BufferedReader(new InputStreamReader(inStream));
+  
+    makeRequest(outStream, "GET", urlObj)
+
+    var line = inBufReader.readLine()
+    
+    while(line!=null) {
+      println(line)
+      line = inBufReader.readLine()
+    }
   }
 }
