@@ -1,4 +1,4 @@
-package com.achals.lobster.HttpEngine
+package com.achals.Lobster.HttpEngine
 
 import java.net.{URL, Socket}
 import java.io.{BufferedReader, InputStreamReader, InputStream, OutputStream}

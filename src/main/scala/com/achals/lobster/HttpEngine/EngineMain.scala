@@ -1,4 +1,4 @@
-package com.achals.lobster.HttpEngine
+package com.achals.Lobster.HttpEngine
 
 object EngineMain {
   def main(args: Array[String]) = {

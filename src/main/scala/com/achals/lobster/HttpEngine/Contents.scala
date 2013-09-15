@@ -1,4 +1,4 @@
-package com.achals.lobster.HttpEngine
+package com.achals.Lobster.HttpEngine
 
 import scala.collection.mutable;
 class Contents(val URL:String, val Headers:Map[String, String], val Body:mutable.StringBuilder) {
