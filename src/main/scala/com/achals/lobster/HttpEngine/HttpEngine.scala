@@ -91,8 +91,12 @@ class HttpEngine {
 		    Some(getChunkedResponse(inBufReader, contents))
 		  else if (tempContents.Headers.contains("Content-Length"))
 			Some(getWholeResponse(inBufReader, contents))
-	      else
+		  else if (tempContents.Headers.contains("Connection") && tempContents.Headers.get("Connection")==(Some("close")))
+			Some(getTillEnd(inBufReader, contents))
+	      else {
+	        println("Not parseable.")
 	        None
+	      }
   }
   
   private def getWholeResponse(inBufReader: BufferedReader, tempContents:Contents) : Contents = {
@@ -101,6 +105,20 @@ class HttpEngine {
     Contents(tempContents.URL,
              tempContents.Headers,
              tempContents.Body ++= readNBytes(inBufReader, length).toString())
+  }
+  
+  @tailrec
+  private def getTillEnd(inBufReader: BufferedReader, tempContents:Contents) : Contents  = {
+	val line = inBufReader.readLine()
+    println("--" + line + "--")
+
+    if (line == null) {
+      println("Returning")
+      tempContents
+    }
+    else getTillEnd(inBufReader, Contents(tempContents.URL,
+    									  tempContents.Headers,
+    									  tempContents.Body ++= line)) 
   }
   
   def getChunkedResponse(inBufReader:BufferedReader, tempContents:Contents): Contents = {
@@ -127,7 +145,7 @@ class HttpEngine {
       tempContent
     else     
       parseLines(inStream, Contents(tempContent.URL, 
-    		  					   tempContent.Headers+(line.split(":", 2)(0) -> line.split(":", 2)(1)),
+    		  					   tempContent.Headers+(line.split(":", 2)(0) -> line.split(":", 2)(1).trim()),
     		  					   tempContent.Body ++= "\r\n" ++= line))
   }
   

@@ -4,12 +4,12 @@ object EngineMain {
   def main(args: Array[String]) = {
     val engine = new HttpEngine()
         
-    engine.simplyRead("http://www.yahoo.com/")
+    //engine.simplyRead("http://www.yahoo.com/")
     
-   /* val contents = engine.GET("http://www.google.com/")
+    val contents = engine.GET("http://www.yahoo.com/")
     contents match {
       case Some(ans) => println((ans.Body.toString));
       case None      => println("Error in performing action.")
-    }*/
+    }
   }
 }
