@@ -87,5 +87,11 @@
   		<version>2.2.1</version>
   		<scope>runtime</scope>
   	</dependency>
+  	<dependency>
+  		<groupId>org.jsoup</groupId>
+  		<artifactId>jsoup</artifactId>
+  		<scope>runtime</scope>
+  		<version>1.7.2</version>
+  	</dependency>
   </dependencies>
 </project>

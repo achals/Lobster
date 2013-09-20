@@ -1,15 +1,18 @@
 package com.achals.Lobster
 
+import api.Parser;
+import HttpEngine.{Contents,JSoupParser, Engine}
+
 /**
  * @author ${user.name}
  */
 object App {
-  
-  def foo(x : Array[String]) = x.foldLeft("")((a,b) => a + b)
-  
+    
   def main(args : Array[String]) {
     println( "Hello World!" )
-    println("concat arguments = " + foo(args))
+    val engine = Engine()
+    val contents = engine.GET("http://www.yahoo.com/").getOrElse(Contents(null, null, null))
+    JSoupParser.getHREFs(contents.Body.toString)
   }
 
 }

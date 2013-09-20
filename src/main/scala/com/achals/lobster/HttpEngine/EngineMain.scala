@@ -2,7 +2,7 @@ package com.achals.Lobster.HttpEngine
 
 object EngineMain {
   def main(args: Array[String]) = {
-    val engine = new HttpEngine()
+    val engine = Engine()
         
     //engine.simplyRead("http://www.yahoo.com/")
     

@@ -7,7 +7,13 @@ import java.lang.Integer
 import scala.annotation.tailrec
 import scala.collection.mutable
 
-class HttpEngine {
+object Engine {
+  def apply() : Engine ={
+    new Engine()
+  }
+}
+
+class Engine {
 
   def HEAD (url: String):Option[Contents] = {
     val urlObj = new URL(url)
@@ -59,7 +65,7 @@ class HttpEngine {
     val StatusLine = inStream.readLine()
     if (StatusLine.split(" ")(1)=="200") {
 		  val initList:mutable.StringBuilder = new mutable.StringBuilder(StatusLine)
-		  initList.map((x:Char) => println (x + " " + x.toInt) )
+		  //initList.map((x:Char) => println (x + " " + x.toInt) )
 		  Some(parseLines(inStream, Contents(url, Map[String, String](), initList)))
 		}
     else
@@ -86,7 +92,7 @@ class HttpEngine {
   }
   
   private def parseBody(inBufReader: BufferedReader, tempContents: Contents): Option[Contents] = {
-	  val contents = Contents(tempContents.URL, tempContents.Headers, tempContents.Body ++= "\r\n")
+	  val contents = Contents(tempContents.URL, tempContents.Headers, tempContents.Body ++= "\r\n", new mutable.StringBuilder)
 		  if (tempContents.Headers.get("Transfer-Encoding") == Some("Chunked"))
 		    Some(getChunkedResponse(inBufReader, contents))
 		  else if (tempContents.Headers.contains("Content-Length"))
@@ -101,24 +107,24 @@ class HttpEngine {
   
   private def getWholeResponse(inBufReader: BufferedReader, tempContents:Contents) : Contents = {
     val length = Integer.parseInt(tempContents.Headers.getOrElse("Content-Length", "0").trim)
-    println(length)
+    val NBytes = readNBytes(inBufReader, length).toString()
     Contents(tempContents.URL,
              tempContents.Headers,
-             tempContents.Body ++= readNBytes(inBufReader, length).toString())
+             tempContents.Body ++= NBytes,
+             tempContents.HTML ++= NBytes)
   }
   
   @tailrec
   private def getTillEnd(inBufReader: BufferedReader, tempContents:Contents) : Contents  = {
 	val line = inBufReader.readLine()
-    println("--" + line + "--")
 
     if (line == null) {
-      println("Returning")
       tempContents
     }
     else getTillEnd(inBufReader, Contents(tempContents.URL,
     									  tempContents.Headers,
-    									  tempContents.Body ++= line)) 
+    									  tempContents.Body ++= line,
+    									  tempContents.HTML ++= line)) 
   }
   
   def getChunkedResponse(inBufReader:BufferedReader, tempContents:Contents): Contents = {
@@ -133,20 +139,21 @@ class HttpEngine {
       
       getChunkedResponse(inBufReader, Contents(tempContents.URL,
     		  								   tempContents.Headers,
-    		  								   tempContents.Body ++= bodyLine.toString()))
+    		  								   tempContents.Body ++= bodyLine.toString(),
+    		  								   tempContents.HTML ++= bodyLine.toString()))
     }
   }
   
   @tailrec
   private def parseLines(inStream: BufferedReader, tempContent:Contents):Contents ={
     val line = inStream.readLine()
-    println(line)
     if (line==null || line=="")
       tempContent
     else     
       parseLines(inStream, Contents(tempContent.URL, 
     		  					   tempContent.Headers+(line.split(":", 2)(0) -> line.split(":", 2)(1).trim()),
-    		  					   tempContent.Body ++= "\r\n" ++= line))
+    		  					   tempContent.Body ++= "\r\n" ++= line,
+    		  					   tempContent.HTML ++= "\r\n" ++= line))
   }
   
   def simplyRead(url: String) ={
