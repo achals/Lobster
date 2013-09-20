@@ -17,8 +17,18 @@ object JSoupParser extends Parser {
     val elements = document.getElementsByTag("a")
     var a=0;
     for (a <- 0 to elements.size-1) {
-      hrefs.append(elements.get(a).attr("href"))
+      if (isValid(elements.get(a).attr("href")))
+    	  hrefs.append(elements.get(a).attr("href"))
+      else ()
     }
     hrefs.toList
   }
+  
+  def isValid(href:String) = {
+    false
+  }
+  
+  def canonize(currentPage:URL, href:String) :String = {
+    href
+  } 
 }
