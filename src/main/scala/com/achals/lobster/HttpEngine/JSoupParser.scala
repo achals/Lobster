@@ -6,29 +6,41 @@ import com.achals.Lobster.api.Parser
 import scala.collection.mutable
 
 object JSoupParser extends Parser {
-  def getHREFs(html:String) : List[URL] = {
+  def getHREFs(currentPage:URL, html:String) : List[URL] = {
     val document = Jsoup.parse(html)
-    hrefsFromParse(document).map(elem => new URL(elem))
+    hrefsFromParse(currentPage, document).map(elem => new URL(elem))
 
   }
   
-  def hrefsFromParse(document: org.jsoup.nodes.Document) : List[String] = {
+  def hrefsFromParse(currentPage:URL, document: org.jsoup.nodes.Document) : List[String] = {
     val hrefs = mutable.ListBuffer.empty[String]
     val elements = document.getElementsByTag("a")
     var a=0;
     for (a <- 0 to elements.size-1) {
-      if (isValid(elements.get(a).attr("href")))
     	  hrefs.append(elements.get(a).attr("href"))
-      else ()
     }
-    hrefs.toList
+    hrefs.toList.map(canonize(currentPage, _)) flatten
   }
-  
-  def isValid(href:String) = {
-    false
-  }
-  
-  def canonize(currentPage:URL, href:String) :String = {
-    href
+    
+  def canonize(currentPage:URL, href:String) :Option[String] = {
+            
+  		if (href.startsWith("http://") || href.startsWith("https://")){
+            Some (href);
+        } else if (href.startsWith("/") || href.startsWith(".")){
+        	val builder:StringBuilder = new StringBuilder();
+            val base = getBaseURL(currentPage.toExternalForm());
+            builder.append(currentPage.getProtocol());
+            builder.append("://");
+            builder.append(currentPage.getHost());
+            builder.append(href);
+            Some (builder.toString)
+        } else {
+        	None
+        }
+
   } 
+  
+  def getBaseURL(currentPage: String) ={
+    
+  }
 }
