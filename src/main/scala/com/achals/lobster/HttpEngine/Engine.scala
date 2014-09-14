@@ -4,6 +4,8 @@ import java.net.{URL, Socket}
 import java.io.{BufferedReader, InputStreamReader, InputStream, OutputStream}
 import java.nio.{ByteBuffer}
 import java.lang.Integer
+import com.achals.lobster.HttpEngine.URLValidator
+
 import scala.annotation.tailrec
 import scala.collection.mutable
 
@@ -28,7 +30,7 @@ class Engine {
   }
   
   def GET(url:String) : Option[Contents] = {
-    val urlObj = new URL(url)
+    val urlObj = URLValidator.validate(url).get
     val port = if (urlObj.getPort() == -1) urlObj.getDefaultPort() else urlObj.getPort()
     val sock = new Socket(urlObj.getHost(), port)
     

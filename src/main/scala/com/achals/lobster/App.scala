@@ -12,7 +12,7 @@ object App {
   def main(args : Array[String]) {
     println( "Hello World!" )
     val engine = Engine()
-    val contents = engine.GET("http://www.yahoo.com/").getOrElse(Contents(null, null, null))
+    val contents = engine.GET("http://www.google.com/").getOrElse(Contents(null, null, null))
     JSoupParser.getHREFs(new URL(contents.URL), contents.Body.toString).map(println)
   }
 
